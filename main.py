@@ -5,8 +5,10 @@ import os
 
 g = [None]  # global variables
 patients = []
+T = [] # define the timeslots as lists
 timeslots = 100
-hospitals = 100 # define the hospital numbers in advance
+hospitals = 100  # define the hospital numbers in advance
+
 
 def readinput():
     f = open("designed-input.txt")
@@ -24,7 +26,12 @@ def readinput():
         startI1, endI1, delay, lengthI2 = map(int, patientInput.split(","))
         patient = Patient(startI1, endI1, delay, lengthI2)
         patients.append(patient)
+
+
 def model(patient):
+    for i in range(timeslots):
+        T.append(i)
+
     m = gp.models('model1')
 
     # Create Variables
@@ -38,15 +45,12 @@ def model(patient):
 
     # Set Constraints for time
     # firstshot = m.addaddConstrs()
-    m.addConstr(x_i_t.sum()==1)
-    m.addConstr(x_i_t*x_i_t>=patient.startIs*x_i_t)
-    m.addConstr(x_i_t<=patient.endIs+1-g[0])
-    m.addConstr(y_i_t-x_i_t<=g[0]+g[2]+patient.delay+patient.lengthI2-g[1])
-    m.addConstr((y_i_t-x_i_t)*y_i_t>=(g[0]+g[2]+patient.delay)*y_i_t)
-    m.addConstr(y_i_t.sum()==1)
-
+    m.addConstr(x_i_t.sum() == 1)
+    m.addConstr(x_i_t * x_i_t >= patient.startIs * x_i_t)
+    m.addConstr(x_i_t <= patient.endIs + 1 - g[0])
+    m.addConstr(y_i_t - x_i_t <= g[0] + g[2] + patient.delay + patient.lengthI2 - g[1])
+    m.addConstr((y_i_t - x_i_t) * y_i_t >= (g[0] + g[2] + patient.delay) * y_i_t)
+    m.addConstr(y_i_t.sum() == 1)
 
 
 readinput()
-
-
