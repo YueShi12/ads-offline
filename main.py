@@ -1,5 +1,5 @@
 import gurobipy as gp
-from gurobipy import GRB
+from gurobipy import GRB, quicksum
 import numpy
 import scipy
 from classes import *
@@ -47,7 +47,8 @@ def model():
     y_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='y_i_t')
 
     h_j = m.addMVar(hospitals, vtype=GRB.BINARY, name="h_j")
-    h_i_j = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
+    h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
+    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
     h_j_t = m.addMVar((timeslots, hospitals), vtype=GRB.BINARY, name="h_j_t")
 
     # Set Constraints for time
@@ -66,16 +67,30 @@ def model():
     #
     # # # Set Constraints for hospital
     m.addConstrs((h_j[j] - h_j_t[t][j] >= 0) for t in range(timeslots) for j in range(hospitals))
-    m.addConstrs((h_j_t[t + g[0]][j] >= h_i_j[i] @ x_i_t[:,i])
+
+    m.addConstrs((h_j_t[t + g[0]][j] >= x_i_t[t] @ h_i_j_1[:,j])
                  for i in range(g[3])
                  for t in range(timeslots-g[0])
                  for j in range(hospitals)
                  )
-    m.addConstrs((h_j_t[t + g[1]][j] >= h_i_j[i] @ y_i_t[:,i])
+    m.addConstrs((h_j_t[t + g[1]][j] >= y_i_t[t] @ h_i_j_2[:,j])
                  for i in range(g[3])
                  for t in range(timeslots-g[1])
                  for j in range(hospitals)
                  )
+
+    m.addConstrs((h_i_j_1[i].sum() == 1) for i in range(g[3]))
+    m.addConstrs((h_i_j_2[i].sum() == 1) for i in range(g[3]))
+    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(p[0]) for j in range(hospitals))<=1)
+                 for t in range(timeslots)
+                 for i in range(g[3])
+                 )
+    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(p[1]) for j in range(hospitals))<=1)
+                 for t in range(timeslots)
+                 for i in range(g[3])
+                 )
+
+
 
 
 
