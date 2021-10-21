@@ -45,15 +45,13 @@ def model():
     # Create Variables
     x_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='x_i_t')
     y_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='y_i_t')
-    #
-    # h_j = m.addMVar(100, vtype=GRB.BINARY, name="h_j")
+
+    h_j = m.addMVar(hospitals, vtype=GRB.BINARY, name="h_j")
     h_i_j = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
     h_j_t = m.addMVar((timeslots, hospitals), vtype=GRB.BINARY, name="h_j_t")
 
-    # Set Objective function
-
     # Set Constraints for time
-    # firstshot = m.addaddConstrs()
+
     m.addConstrs((x_i_t[:, i].sum() == 1) for i in range(g[3]))
 
     m.addConstrs((T1 @ x_i_t[:, i] >= patients[i].startIs) for i in range(g[3]))
@@ -67,20 +65,22 @@ def model():
     m.addConstrs((y_i_t[:, j].sum() == 1) for j in range(g[3]))
     #
     # # # Set Constraints for hospital
-    # m.addConstrs((h_j[j] - h_j_t[t][j] >= 0) for t in range(100) for j in range(100))
-    # m.addConstrs((h_j_t[t + g[1]][j] >= h_i_j[i][j] @ x_i_t[t][i])
-    #              for i in range(g[4])
-    #              for t in range(90)
-    #              for j in range(100)
-    #              )
-    # m.addConstrs((h_j_t[t + g[1]][j] >= h_i_j[i][j] @ y_i_t[t][i])
-    #              for i in range(g[4])
-    #              for t in range(90)
-    #              for j in range(100)
-    #              )
-    #
+    m.addConstrs((h_j[j] - h_j_t[t][j] >= 0) for t in range(timeslots) for j in range(hospitals))
+    m.addConstrs((h_j_t[t + g[0]][j] >= h_i_j[i] @ x_i_t[:,i])
+                 for i in range(g[3])
+                 for t in range(timeslots-g[0])
+                 for j in range(hospitals)
+                 )
+    m.addConstrs((h_j_t[t + g[1]][j] >= h_i_j[i] @ y_i_t[:,i])
+                 for i in range(g[3])
+                 for t in range(timeslots-g[1])
+                 for j in range(hospitals)
+                 )
 
-    m.setObjective(T1 @ y_i_t[:, 9], GRB.MINIMIZE)
+
+
+
+    m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
     # m.computeIIS()
 
