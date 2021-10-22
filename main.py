@@ -44,12 +44,24 @@ def model():
 
     # Create Variables
     x_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='x_i_t')
+    x_i_t = x_i_t.tolist()
+    x_i_t = numpy.asarray(x_i_t)
     y_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='y_i_t')
+    y_i_t = y_i_t.tolist()
+    y_i_t = numpy.asarray(y_i_t)
 
     h_j = m.addMVar(hospitals, vtype=GRB.BINARY, name="h_j")
-    h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
-    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j")
+    h_j = h_j.tolist()
+    h_j = numpy.asarray(h_j)
+    h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_1")
+    h_i_j_1 = h_i_j_1.tolist()
+    h_i_j_1 = numpy.asarray(h_i_j_1)
+    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")
+    h_i_j_2 = h_i_j_1.tolist()
+    h_i_j_2 = numpy.asarray(h_i_j_2)
     h_j_t = m.addMVar((timeslots, hospitals), vtype=GRB.BINARY, name="h_j_t")
+    h_j_t = h_j_t.tolist()
+    h_j_t = numpy.asarray(h_j_t)
 
     # Set Constraints for time
 
@@ -64,8 +76,8 @@ def model():
     #
     m.addConstrs((T1 @ y_i_t[:, j] >= g[0] + g[2] + patients[j].delay + T1 @ x_i_t[:, j]) for j in range(g[3]))
     m.addConstrs((y_i_t[:, j].sum() == 1) for j in range(g[3]))
-    #
-    # # # Set Constraints for hospital
+
+    # # Set Constraints for hospital
     m.addConstrs((h_j[j] - h_j_t[t][j] >= 0) for t in range(timeslots) for j in range(hospitals))
 
     m.addConstrs((h_j_t[t + g[0]][j] >= x_i_t[t] @ h_i_j_1[:,j])
@@ -81,12 +93,13 @@ def model():
 
     m.addConstrs((h_i_j_1[i].sum() == 1) for i in range(g[3]))
     m.addConstrs((h_i_j_2[i].sum() == 1) for i in range(g[3]))
-    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(p[0]) for j in range(hospitals))<=1)
-                 for t in range(timeslots)
+    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals)))<=1
+                 for t in range(timeslots-g[0])
                  for i in range(g[3])
                  )
-    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(p[1]) for j in range(hospitals))<=1)
-                 for t in range(timeslots)
+    
+    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals)))<=1
+                 for t in range(timeslots-g[1])
                  for i in range(g[3])
                  )
 
