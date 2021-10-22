@@ -8,7 +8,7 @@ import os
 g = [] # global variables
 
 T = []  # define the timeslots as lists
-timeslots = 70
+timeslots = 1000 # define the timeslots numbers in advance
 hospitals = 10  # define the hospital numbers in advance
 
 patients = []
@@ -43,30 +43,32 @@ def model():
     m = gp.Model('model1')
 
     # # Create Variables
-    x_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='x_i_t')
+    x_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='x_i_t') #This variable is equal to 1 if patient i will have the fist shot at time t
     x_i_t = x_i_t.tolist()
     x_i_t = numpy.asarray(x_i_t)
-    y_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='y_i_t')
+    y_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='y_i_t')#This variable is equal to 1 if patient i will have the second shot at time t
     y_i_t = y_i_t.tolist()
     y_i_t = numpy.asarray(y_i_t)
 
-    h_j = m.addMVar(hospitals, vtype=GRB.BINARY, name="h_j")
+    h_j = m.addMVar(hospitals, vtype=GRB.BINARY, name="h_j")#This variable is equal to 1 if the hospital j is used.
     h_j = h_j.tolist()
     h_j = numpy.asarray(h_j)
-    h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_1")
+    h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_1")#This variable is equal to 1 if patient i is in hospital j for first shot
     h_i_j_1 = h_i_j_1.tolist()
     h_i_j_1 = numpy.asarray(h_i_j_1)
-    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")
+    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")##This variable is equal to 1 if patient i is in hospital j for second shot
     h_i_j_2 = h_i_j_2.tolist()
     h_i_j_2 = numpy.asarray(h_i_j_2)
-    h_j_t = m.addMVar((timeslots, hospitals), vtype=GRB.BINARY, name="h_j_t")
+    h_j_t = m.addMVar((hospitals,timeslots), vtype=GRB.BINARY, name="h_j_t")#The variable is equal to 1 if the hospital is used at time t
     h_j_t = h_j_t.tolist()
     h_j_t = numpy.asarray(h_j_t)
 
 
 
     # Set Constraints for time
+    
 
+    # every patient need to have a first shot
     m.addConstrs((x_i_t[:, i].sum() == 1)
                  for i in range(g[3])
                  )
@@ -91,20 +93,20 @@ def model():
                  )
 
     # # Set Constraints for hospital
-    m.addConstrs((h_j[j] >= h_j_t[t][j])
+    m.addConstrs((h_j[j] >= h_j_t[j][t])
                  for t in range(timeslots)
                  for j in range(hospitals)
                  )
-   
 
-    m.addConstrs((h_j_t[t+n][j] >= x_i_t[t][i] * h_i_j_1[i][ j])
+
+    m.addConstrs((h_j_t[j][t+n] >= x_i_t[t][i] * h_i_j_1[i][ j])
                  for i in range(g[3])
                  for n in range(g[0])
                  for t in range(timeslots-g[0])
                  for j in range(hospitals)
 
                  )
-    m.addConstrs((h_j_t[t+n][j] >= y_i_t[t][i] * h_i_j_2[i][j])
+    m.addConstrs((h_j_t[j][t+n] >= y_i_t[t][i] * h_i_j_2[i][j])
                  for i in range(g[3])
                  for n in range(g[1])
                  for t in range(timeslots-g[1])
@@ -118,14 +120,19 @@ def model():
     m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
-    m.addConstrs((quicksum(x_i_t[t+n+1][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals))<=1)
-                 for t in range(timeslots-g[0])
+    m.addConstrs((h_i_j_1[i]@h_j_t[:,t] <=1)
+                 for t in range(timeslots)
                  for i in range(g[3])
                  )
 
-    m.addConstrs((quicksum(y_i_t[t+n+1][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals))<=1)
+    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
+                 for t in range(timeslots-g[0])
+                 for j in range(hospitals)
+                 )
+
+    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
                  for t in range(timeslots-g[1])
-                 for i in range(g[3])
+                 for j in range(hospitals)
                  )
 
 
@@ -142,35 +149,35 @@ def model():
     m.optimize()
 
 
-
-    for t in range(timeslots):
-        for j in range(hospitals):
-            if h_j_t[t][j].x>=1:
-                print(h_j_t[t][j].x, t ,j)
+    #
+    # for t in range(timeslots):
+    #     for j in range(hospitals):
+    #         if h_j_t[j][t].x>=1:
+    #             print(h_j_t[j][t].x, t ,j)
 
     print('___________________hosipitail for the first shot______________________________________')
     for i in range(g[3]):
         for j in range(hospitals):
             if h_i_j_1[i][j].x >=1:
-                print(j,i)
+                print('hospital location:', j,'patient:', i)
 
     print('______________________hospital for the second shot___________________________________')
     for i in range(g[3]):
         for j in range(hospitals):
             if h_i_j_2[i][j].x >= 1:
-                print(j, i)
+                print('hospital location:', j,'patient:', i)
 
-    print('_________________________________________________________')
+    print('______________________time schedule for the first shot________________________________')
     for i in range(g[3]):
         for t in range(timeslots):
             if x_i_t[t][i].x >=1:
-                print(t,i)
-    print('_________________________________________________________')
+                print('time slot:', t,'patien:', i)
+    print('______________________time schedule for the second shot___________________________________')
     for i in range(g[3]):
         for t in range(timeslots):
             if y_i_t[t][i].x >=1:
-                print(t,i)
-    print('___________________number of hospital_____________________________________')
+                print('time slot:', t,'patien:' ,i)
+    print('___________________________ hospital we used_____________________________________')
     n=0
     for j in range(hospitals):
         if h_j[j].x>=1:
