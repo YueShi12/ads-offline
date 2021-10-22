@@ -8,8 +8,8 @@ import os
 g = [] # global variables
 
 T = []  # define the timeslots as lists
-timeslots = 100
-hospitals = 100  # define the hospital numbers in advance
+timeslots = 70
+hospitals = 10  # define the hospital numbers in advance
 
 patients = []
 
@@ -91,35 +91,39 @@ def model():
                  )
 
     # # Set Constraints for hospital
-    m.addConstrs((h_j[j]  >= h_j_t[t][j])
-                 for t in range(timeslots) for j in range(hospitals)
+    m.addConstrs((h_j[j] >= h_j_t[t][j])
+                 for t in range(timeslots)
+                 for j in range(hospitals)
                  )
+   
 
-    m.addConstrs((h_j_t[t + n][j] >= x_i_t[t]@ h_i_j_1[:,j])
+    m.addConstrs((h_j_t[t+n][j] >= x_i_t[t][i] * h_i_j_1[i][ j])
                  for i in range(g[3])
                  for n in range(g[0])
                  for t in range(timeslots-g[0])
                  for j in range(hospitals)
+
                  )
-    m.addConstrs((h_j_t[t + n][j] >= y_i_t[t] @ h_i_j_2[:,j])
+    m.addConstrs((h_j_t[t+n][j] >= y_i_t[t][i] * h_i_j_2[i][j])
                  for i in range(g[3])
                  for n in range(g[1])
                  for t in range(timeslots-g[1])
                  for j in range(hospitals)
                  )
+    m.addConstr(h_j_t.sum()<=x_i_t.sum()*g[0]+y_i_t.sum()*g[1])
 
-    m.addConstrs((h_i_j_1[i].sum() == 1)
+    m.addConstrs( (h_i_j_1[i].sum() == 1)
                  for i in range(g[3])
                  )
     m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
-    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals))<=1)
+    m.addConstrs((quicksum(x_i_t[t+n+1][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals))<=1)
                  for t in range(timeslots-g[0])
                  for i in range(g[3])
                  )
 
-    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals))<=1)
+    m.addConstrs((quicksum(y_i_t[t+n+1][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals))<=1)
                  for t in range(timeslots-g[1])
                  for i in range(g[3])
                  )
@@ -130,23 +134,47 @@ def model():
 
 
 
+
+    # m.setObjectiveN(h_j_t.sum(), GRB.MINIMIZE, 0)
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
+
+
     m.optimize()
-# hospital and patients
+
+
+
+    for t in range(timeslots):
+        for j in range(hospitals):
+            if h_j_t[t][j].x>=1:
+                print(h_j_t[t][j].x, t ,j)
+
+    print('___________________hosipitail for the first shot______________________________________')
     for i in range(g[3]):
         for j in range(hospitals):
             if h_i_j_1[i][j].x >=1:
                 print(j,i)
- #schedule for the first shot
+
+    print('______________________hospital for the second shot___________________________________')
+    for i in range(g[3]):
+        for j in range(hospitals):
+            if h_i_j_2[i][j].x >= 1:
+                print(j, i)
+
+    print('_________________________________________________________')
     for i in range(g[3]):
         for t in range(timeslots):
             if x_i_t[t][i].x >=1:
                 print(t,i)
-  #schedule for the second shot
+    print('_________________________________________________________')
     for i in range(g[3]):
         for t in range(timeslots):
             if y_i_t[t][i].x >=1:
                 print(t,i)
+    print('___________________number of hospital_____________________________________')
+    n=0
+    for j in range(hospitals):
+        if h_j[j].x>=1:
+            print(j)
 
     # m.computeIIS()
 
