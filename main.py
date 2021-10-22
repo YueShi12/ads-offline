@@ -75,7 +75,7 @@ def model():
                  for i in range(g[3])
                  )
     # # print(T1@x_i_t[:,0])
-    m.addConstrs((T1 @ x_i_t[:, i] <= patients[i].endIs + g[2] - g[0])
+    m.addConstrs((T1 @ x_i_t[:, i] <= patients[i].endIs + 1 - g[0])
                  for i in range(g[3])
                  )
     #
