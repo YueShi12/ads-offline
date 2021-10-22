@@ -56,7 +56,7 @@ def model():
     h_i_j_1 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_1")#This variable is equal to 1 if patient i is in hospital j for first shot
     h_i_j_1 = h_i_j_1.tolist()
     h_i_j_1 = numpy.asarray(h_i_j_1)
-    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")##This variable is equal to 1 if patient i is in hospital j for second shot
+    h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")#This variable is equal to 1 if patient i is in hospital j for second shot
     h_i_j_2 = h_i_j_2.tolist()
     h_i_j_2 = numpy.asarray(h_i_j_2)
     h_j_t = m.addMVar((hospitals,timeslots), vtype=GRB.BINARY, name="h_j_t")#The variable is equal to 1 if the hospital is used at time t
@@ -66,21 +66,22 @@ def model():
 
 
     # Set Constraints for time
-    
 
-    # every patient need to have a first shot
+
+    # every patient needs to have a first shot
     m.addConstrs((x_i_t[:, i].sum() == 1)
                  for i in range(g[3])
                  )
 
+    #the first shot  is scheduled after the patient-dependent first available time slot
     m.addConstrs((T1 @ x_i_t[:, i] >= patients[i].startIs)
                  for i in range(g[3])
                  )
-    # # print(T1@x_i_t[:,0])
+    #the  first  shot  which  is  scheduled  in  the  patient-dependent interval.
     m.addConstrs((T1 @ x_i_t[:, i] <= patients[i].endIs + 1 - g[0])
                  for i in range(g[3])
                  )
-    #
+    #the second shot which is scheduled in the patient-dependent interval
     m.addConstrs((T1 @ y_i_t[:, j] + g[1] <= T1 @ x_i_t[:, j] + g[0] + g[2] + patients[j].delay + patients[j].lengthI2)
                  for j in range(g[3])
                  )
@@ -88,17 +89,20 @@ def model():
     m.addConstrs((T1 @ y_i_t[:, j] >= g[0] + g[2] + patients[j].delay + T1 @ x_i_t[:, j])
                  for j in range(g[3])
                  )
+    #every patient needs to have a second shot
     m.addConstrs((y_i_t[:, j].sum() == 1)
                  for j in range(g[3])
                  )
 
     # # Set Constraints for hospital
+    #make every hospital we used to 1
     m.addConstrs((h_j[j] >= h_j_t[j][t])
                  for t in range(timeslots)
                  for j in range(hospitals)
                  )
 
 
+    #if a patient i has it’s first shot scheduled in hospital j, all time slots starting at t, up to t + p1 should be marked as taken
     m.addConstrs((h_j_t[j][t+n] >= x_i_t[t][i] * h_i_j_1[i][ j])
                  for i in range(g[3])
                  for n in range(g[0])
@@ -106,21 +110,27 @@ def model():
                  for j in range(hospitals)
 
                  )
+    #The same constraint is given for the second shot
     m.addConstrs((h_j_t[j][t+n] >= y_i_t[t][i] * h_i_j_2[i][j])
                  for i in range(g[3])
                  for n in range(g[1])
                  for t in range(timeslots-g[1])
                  for j in range(hospitals)
                  )
+    #the total number of timeslots we marked is up to g[3]*(g[0]+g[1])
     m.addConstr(h_j_t.sum()<=x_i_t.sum()*g[0]+y_i_t.sum()*g[1])
 
+    #every patient can only have one hospital for the first shot
     m.addConstrs( (h_i_j_1[i].sum() == 1)
                  for i in range(g[3])
                  )
+    # every patient can only have one hospital for the second shot
     m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
 
+
+    #for ever hospital at one timeslot can only deal with one patient
     m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
                  for t in range(timeslots-g[0])
                  for j in range(hospitals)
@@ -131,17 +141,7 @@ def model():
                  for j in range(hospitals)
                  )
 
-
-
-
-
-
-
-
-    # m.setObjectiveN(h_j_t.sum(), GRB.MINIMIZE, 0)
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
-
-
     m.optimize()
 
 
@@ -173,7 +173,7 @@ def model():
         for t in range(timeslots):
             if y_i_t[t][i].x >=1:
                 print('time slot:', t,'patien:' ,i)
-    print('___________________________ hospital we used_____________________________________')
+    print('_________________________________hospital we used_________________________________________')
     n=0
     for j in range(hospitals):
         if h_j[j].x>=1:
