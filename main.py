@@ -42,7 +42,7 @@ def model():
     T1 = numpy.asarray(T)
     m = gp.Model('model1')
 
-    # Create Variables
+    # # Create Variables
     x_i_t = m.addMVar((timeslots, g[3]), vtype=GRB.BINARY, name='x_i_t')
     x_i_t = x_i_t.tolist()
     x_i_t = numpy.asarray(x_i_t)
@@ -63,45 +63,67 @@ def model():
     h_j_t = h_j_t.tolist()
     h_j_t = numpy.asarray(h_j_t)
 
+
+
     # Set Constraints for time
 
-    m.addConstrs((x_i_t[:, i].sum() == 1) for i in range(g[3]))
+    m.addConstrs((x_i_t[:, i].sum() == 1)
+                 for i in range(g[3])
+                 )
 
-    m.addConstrs((T1 @ x_i_t[:, i] >= patients[i].startIs) for i in range(g[3]))
+    m.addConstrs((T1 @ x_i_t[:, i] >= patients[i].startIs)
+                 for i in range(g[3])
+                 )
     # # print(T1@x_i_t[:,0])
-    m.addConstrs((T1 @ x_i_t[:, i] <= patients[i].endIs + g[2] - g[0]) for i in range(g[3]))
+    m.addConstrs((T1 @ x_i_t[:, i] <= patients[i].endIs + g[2] - g[0])
+                 for i in range(g[3])
+                 )
     #
-    m.addConstrs((T1 @ y_i_t[:, j] + g[1] <= T1 @ x_i_t[:, j] + g[0] + g[2] + patients[j].delay + patients[j].lengthI2) for j in
-                 range(g[3]))
+    m.addConstrs((T1 @ y_i_t[:, j] + g[1] <= T1 @ x_i_t[:, j] + g[0] + g[2] + patients[j].delay + patients[j].lengthI2)
+                 for j in range(g[3])
+                 )
     #
-    m.addConstrs((T1 @ y_i_t[:, j] >= g[0] + g[2] + patients[j].delay + T1 @ x_i_t[:, j]) for j in range(g[3]))
-    m.addConstrs((y_i_t[:, j].sum() == 1) for j in range(g[3]))
+    m.addConstrs((T1 @ y_i_t[:, j] >= g[0] + g[2] + patients[j].delay + T1 @ x_i_t[:, j])
+                 for j in range(g[3])
+                 )
+    m.addConstrs((y_i_t[:, j].sum() == 1)
+                 for j in range(g[3])
+                 )
 
     # # Set Constraints for hospital
-    m.addConstrs((h_j[j] - h_j_t[t][j] >= 0) for t in range(timeslots) for j in range(hospitals))
+    m.addConstrs((h_j[j]  >= h_j_t[t][j])
+                 for t in range(timeslots) for j in range(hospitals)
+                 )
 
-    m.addConstrs((h_j_t[t + g[0]][j] >= x_i_t[t] @ h_i_j_1[:,j])
+    m.addConstrs((h_j_t[t + n][j] >= x_i_t[t]@ h_i_j_1[:,j])
                  for i in range(g[3])
+                 for n in range(g[0])
                  for t in range(timeslots-g[0])
                  for j in range(hospitals)
                  )
-    m.addConstrs((h_j_t[t + g[1]][j] >= y_i_t[t] @ h_i_j_2[:,j])
+    m.addConstrs((h_j_t[t + n][j] >= y_i_t[t] @ h_i_j_2[:,j])
                  for i in range(g[3])
+                 for n in range(g[1])
                  for t in range(timeslots-g[1])
                  for j in range(hospitals)
                  )
 
-    m.addConstrs((h_i_j_1[i].sum() == 1) for i in range(g[3]))
-    m.addConstrs((h_i_j_2[i].sum() == 1) for i in range(g[3]))
-    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals)))<=1
-                 for t in range(timeslots-g[0])
+    m.addConstrs((h_i_j_1[i].sum() == 1)
                  for i in range(g[3])
                  )
-    
-    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals)))<=1
-                 for t in range(timeslots-g[1])
+    m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
+    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]+1) for j in range(hospitals))<=1)
+                 for t in range(timeslots-g[0]-1)
+                 for i in range(g[3])
+                 )
+
+    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]+1) for j in range(hospitals))<=1)
+                 for t in range(timeslots-g[1]-1)
+                 for i in range(g[3])
+                 )
+
 
 
 
@@ -110,6 +132,12 @@ def model():
 
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
+
+    for i in range(g[3]):
+        for j in range(hospitals):
+            if h_i_j_1[i][j].x >=1:
+                print(j,i)
+
     # m.computeIIS()
 
 
