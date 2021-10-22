@@ -120,10 +120,6 @@ def model():
     m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
-    m.addConstrs((h_i_j_1[i]@h_j_t[:,t] <=1)
-                 for t in range(timeslots)
-                 for i in range(g[3])
-                 )
 
     m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
                  for t in range(timeslots-g[0])
