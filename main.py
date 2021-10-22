@@ -114,13 +114,13 @@ def model():
     m.addConstrs((h_i_j_2[i].sum() == 1)
                  for i in range(g[3])
                  )
-    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]+1) for j in range(hospitals))<=1)
-                 for t in range(timeslots-g[0]-1)
+    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j] for n in range(g[0]) for j in range(hospitals))<=1)
+                 for t in range(timeslots-g[0])
                  for i in range(g[3])
                  )
 
-    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]+1) for j in range(hospitals))<=1)
-                 for t in range(timeslots-g[1]-1)
+    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j] for n in range(g[1]) for j in range(hospitals))<=1)
+                 for t in range(timeslots-g[1])
                  for i in range(g[3])
                  )
 
@@ -132,11 +132,21 @@ def model():
 
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
-
+# hospital and patients
     for i in range(g[3]):
         for j in range(hospitals):
             if h_i_j_1[i][j].x >=1:
                 print(j,i)
+ #schedule for the first shot
+    for i in range(g[3]):
+        for t in range(timeslots):
+            if x_i_t[t][i].x >=1:
+                print(t,i)
+  #schedule for the second shot
+    for i in range(g[3]):
+        for t in range(timeslots):
+            if y_i_t[t][i].x >=1:
+                print(t,i)
 
     # m.computeIIS()
 
