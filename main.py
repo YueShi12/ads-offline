@@ -57,7 +57,7 @@ def model():
     h_i_j_1 = h_i_j_1.tolist()
     h_i_j_1 = numpy.asarray(h_i_j_1)
     h_i_j_2 = m.addMVar((g[3], hospitals), vtype=GRB.BINARY, name="h_i_j_2")
-    h_i_j_2 = h_i_j_1.tolist()
+    h_i_j_2 = h_i_j_2.tolist()
     h_i_j_2 = numpy.asarray(h_i_j_2)
     h_j_t = m.addMVar((timeslots, hospitals), vtype=GRB.BINARY, name="h_j_t")
     h_j_t = h_j_t.tolist()
