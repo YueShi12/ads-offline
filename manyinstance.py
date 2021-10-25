@@ -150,30 +150,29 @@ def model(patients,g,filename):
     m.optimize()
 
 
-
-    print('___________________hosipitail for the first shot______________________________________')
-    for i in range(g[3]):
-        for j in range(hospitals):
-            if h_i_j_1[i][j].x >=1:
-                print('hospital location:', j,'patient:', i)
-
-    print('______________________hospital for the second shot___________________________________')
-    for i in range(g[3]):
-        for j in range(hospitals):
-            if h_i_j_2[i][j].x >= 1:
-                print('hospital location:', j,'patient:', i)
-
-    print('______________________time schedule for the first shot________________________________')
-    for i in range(g[3]):
-        for t in range(timeslots):
-            if x_i_t[t][i].x >=1:
-                print('time slot:', t,'patien:', i)
-    print('______________________time schedule for the second shot_______________________________')
-    for i in range(g[3]):
-        for t in range(timeslots):
-            if y_i_t[t][i].x >=1:
-                print('time slot:', t,'patien:' ,i)
-    print('_________________________________hospital we used_____________________________________')
+    # print('___________________hosipitail for the first shot______________________________________')
+    # for i in range(g[3]):
+    #     for j in range(hospitals):
+    #         if h_i_j_1[i][j].x >=1:
+    #             print('hospital location:', j,'patient:', i)
+    #
+    # print('______________________hospital for the second shot___________________________________')
+    # for i in range(g[3]):
+    #     for j in range(hospitals):
+    #         if h_i_j_2[i][j].x >= 1:
+    #             print('hospital location:', j,'patient:', i)
+    #
+    # print('______________________time schedule for the first shot________________________________')
+    # for i in range(g[3]):
+    #     for t in range(timeslots):
+    #         if x_i_t[t][i].x >=1:
+    #             print('time slot:', t,'patien:', i)
+    # print('______________________time schedule for the second shot_______________________________')
+    # for i in range(g[3]):
+    #     for t in range(timeslots):
+    #         if y_i_t[t][i].x >=1:
+    #             print('time slot:', t,'patien:' ,i)
+    # print('_________________________________hospital we used_____________________________________')
     h_used = []
     for j in range(hospitals):
         if h_j[j].x>=1:
