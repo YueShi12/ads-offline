@@ -9,8 +9,7 @@ from classes import *
 import os
 
 
-
-T = []  # define the timeslots as lists
+ # define the timeslots as lists
 timeslots = 1000 # define the timeslots numbers in advance
 hospitals = 10  # define the hospital numbers in advance
 filename =[]
@@ -41,6 +40,7 @@ def readinput(filename):
 
 
 def model(patients,g,filename):
+    T = []
     for i in range(timeslots):
         T.append(int(i))
 
