@@ -129,42 +129,61 @@ def model(patients, g, filename):
                  )
 
     # for ever hospital at one timeslot can only deal with one patient
-    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for i in range(g[3]) for n in range(g[0])) <= 1)
+    # m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for i in range(g[3]) for n in range(g[0])) <= 1)
+    #              for t in range(timeslots - g[0])
+    #              for j in range(hospitals)
+    #              )
+    #
+    # m.addConstrs((quicksum(y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in range(g[1])) <= 1)
+    #              for t in range(timeslots - g[1])
+    #              for j in range(hospitals)
+    #              )
+    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j]for i in range(g[3]) for n in range(g[0])) <= 1)
                  for t in range(timeslots - g[0])
                  for j in range(hospitals)
                  )
-
-    m.addConstrs((quicksum(y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in range(g[0])) <= 1)
+    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in
+        range(g[1])) <= 1)
                  for t in range(timeslots - g[1])
                  for j in range(hospitals)
                  )
+    # m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for i in range(g[3]) for n in range(g[1])) + quicksum(
+    #     y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in range(g[1])) <= 1)
+    #              for t in range(timeslots - g[1])
+    #              for j in range(hospitals)
+    #              )
+    # m.addConstrs((quicksum(quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for n in range(g[0])) + quicksum(
+    #     y_i_t[t + n][i] * h_i_j_2[i][j] for n in range(g[1])) for i in range(g[3])) <= 1)
+    #              for t in range(timeslots - g[0] - g[1])
+    #              for j in range(hospitals)
+    #              )
 
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
 
-    # print('___________________hosipitail for the first shot______________________________________')
-    # for i in range(g[3]):
-    #     for j in range(hospitals):
-    #         if h_i_j_1[i][j].x >=1:
-    #             print('hospital location:', j,'patient:', i)
-    #
-    # print('______________________hospital for the second shot___________________________________')
-    # for i in range(g[3]):
-    #     for j in range(hospitals):
-    #         if h_i_j_2[i][j].x >= 1:
-    #             print('hospital location:', j,'patient:', i)
-    #
-    # print('______________________time schedule for the first shot________________________________')
-    # for i in range(g[3]):
-    #     for t in range(timeslots):
-    #         if x_i_t[t][i].x >=1:
-    #             print('time slot:', t,'patien:', i)
-    # print('______________________time schedule for the second shot_______________________________')
-    # for i in range(g[3]):
-    #     for t in range(timeslots):
-    #         if y_i_t[t][i].x >=1:
-    #             print('time slot:', t,'patien:' ,i)
-    # print('_________________________________hospital we used_____________________________________')
+    print('___________________hosipitail for the first shot______________________________________')
+    for i in range(g[3]):
+        for j in range(hospitals):
+            if h_i_j_1[i][j].x >= 1:
+                print('hospital location:', j, 'patient:', i)
+
+    print('______________________hospital for the second shot___________________________________')
+    for i in range(g[3]):
+        for j in range(hospitals):
+            if h_i_j_2[i][j].x >= 1:
+                print('hospital location:', j, 'patient:', i)
+
+    print('______________________time schedule for the first shot________________________________')
+    for i in range(g[3]):
+        for t in range(timeslots):
+            if x_i_t[t][i].x >= 1:
+                print('time slot:', t, 'patien:', i)
+    print('______________________time schedule for the second shot_______________________________')
+    for i in range(g[3]):
+        for t in range(timeslots):
+            if y_i_t[t][i].x >= 1:
+                print('time slot:', t, 'patien:', i)
+    print('_________________________________hospital we used_____________________________________')
     h_used = []
     for j in range(hospitals):
         if h_j[j].x >= 1:
@@ -177,12 +196,23 @@ def model(patients, g, filename):
 
 
 def main():
-    filename.append('designed-input.txt')
-    # filename.append('10-1.txt')
-    # filename.append('10-2.txt')
-    filename.append('10-3.txt')
-    # filename.append('12.txt')
-    # filename.append('15.txt')
+    #
+    filename.append('4-1.txt')
+    filename.append('4-2.txt')
+    filename.append('4-4.txt')
+    filename.append('6-1.txt')
+    filename.append('5-3.txt')
+    filename.append('5-4.txt')
+    # filename.append('6-1.txt')
+    # filename.append('6-2.txt')
+    # filename.append('6-3.txt')
+    # filename.append('7-1.txt')
+    # filename.append('7-2.txt')
+    # filename.append('9.txt')
+    # filename.append('10-3.txt')
+    # filename.append('23.txt')
+    # filename.append('25.txt')
+
     # filename.append('20.txt')
     # filename.append('23.txt')
     # filename.append('25.txt')# add the file name you copy this line mutil times
@@ -195,7 +225,7 @@ def main():
         time_used = time.time() - start_time
         time_used_total.append(file + '   ' + str(time_used))
 
-    with open('time.txt', 'w') as f:
+    with open('time.txt', 'a+') as f:
         for t in time_used_total:
             f.writelines(t + '\n')
 
