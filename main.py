@@ -131,15 +131,16 @@ def model():
 
 
     #for ever hospital at one timeslot can only deal with one patient
-    m.addConstrs((quicksum(x_i_t[t+n][i] * h_i_j_1[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
-                 for t in range(timeslots-g[0])
+    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j]for i in range(g[3]) for n in range(g[0]-1)) <= 1)
+                 for t in range(timeslots - g[0])
+                 for j in range(hospitals)
+                 )
+    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in
+        range(g[1]-1)) <= 1)
+                 for t in range(timeslots - g[1])
                  for j in range(hospitals)
                  )
 
-    m.addConstrs((quicksum(y_i_t[t+n][i] * h_i_j_2[i][j]  for i in range(g[3]) for n in range(g[0]))<=1)
-                 for t in range(timeslots-g[1])
-                 for j in range(hospitals)
-                 )
 
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
