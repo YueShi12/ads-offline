@@ -129,34 +129,16 @@ def model(patients, g, filename):
                  )
 
     # for ever hospital at one timeslot can only deal with one patient
-    # m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for i in range(g[3]) for n in range(g[0])) <= 1)
-    #              for t in range(timeslots - g[0])
-    #              for j in range(hospitals)
-    #              )
-    #
-    # m.addConstrs((quicksum(y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in range(g[1])) <= 1)
-    #              for t in range(timeslots - g[1])
-    #              for j in range(hospitals)
-    #              )
-    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j]for i in range(g[3]) for n in range(g[0])) <= 1)
+    m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j]for i in range(g[3]) for n in range(g[0]-1)) <= 1)
                  for t in range(timeslots - g[0])
                  for j in range(hospitals)
                  )
     m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] + y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in
-        range(g[1])) <= 1)
+        range(g[1]-1)) <= 1)
                  for t in range(timeslots - g[1])
                  for j in range(hospitals)
                  )
-    # m.addConstrs((quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for i in range(g[3]) for n in range(g[1])) + quicksum(
-    #     y_i_t[t + n][i] * h_i_j_2[i][j] for i in range(g[3]) for n in range(g[1])) <= 1)
-    #              for t in range(timeslots - g[1])
-    #              for j in range(hospitals)
-    #              )
-    # m.addConstrs((quicksum(quicksum(x_i_t[t + n][i] * h_i_j_1[i][j] for n in range(g[0])) + quicksum(
-    #     y_i_t[t + n][i] * h_i_j_2[i][j] for n in range(g[1])) for i in range(g[3])) <= 1)
-    #              for t in range(timeslots - g[0] - g[1])
-    #              for j in range(hospitals)
-    #              )
+
 
     m.setObjective(h_j.sum(), GRB.MINIMIZE)
     m.optimize()
@@ -197,12 +179,12 @@ def model(patients, g, filename):
 
 def main():
     #
-    filename.append('4-1.txt')
-    filename.append('4-2.txt')
-    filename.append('4-4.txt')
-    filename.append('6-1.txt')
-    filename.append('5-3.txt')
-    filename.append('5-4.txt')
+    filename.append('10-1.txt')
+    # filename.append('4-2.txt')
+    # filename.append('4-4.txt')
+    # filename.append('6-1.txt')
+    # filename.append('5-3.txt')
+    # filename.append('5-4.txt')
     # filename.append('6-1.txt')
     # filename.append('6-2.txt')
     # filename.append('6-3.txt')
